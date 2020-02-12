@@ -33,8 +33,9 @@ extern "C" {
 #include "DisplayUI.h"
 #include "A_config.h"
 #include "webfiles.h"
-
 #include "LED.h"
+
+
 
 // Run-Time Variables //
 LED led;
@@ -48,14 +49,33 @@ Attack attack;
 CLI    cli;
 DisplayUI displayUI;
 
+// RED BUTTON VARIABLES 
+int redButton = D5;         // the number of the input pin
+int statusLed = D4;       // the number of the output pin
+
+int state = HIGH;      // the current state of the output pin
+int reading;           // the current reading from the input pin
+int previous = LOW;    // the previous reading from the input pin
+
+unsigned long time = 0;           // the last time the output pin was toggled
+unsigned long debounce = 200UL;   // the debounce time, increase if the output flickers
+
+
+// 
 #include "wifi.h"
 
 uint32_t autosaveTime = 0;
 uint32_t currentTime  = 0;
 
 bool booted = false;
-
+//                                                                                           VOID SETUP
 void setup() {
+   
+  pinMode(redButton, INPUT); // enable button pin
+  pinMode(statusLed, OUTPUT);       // enable LED pin
+   
+   
+   
     // for random generator
     randomSeed(os_random());
 
@@ -148,8 +168,34 @@ void setup() {
     // setup LED
     led.setup();
 }
-
+//                                                                                    VOID LOOP
 void loop() {
+   
+   
+   
+ //                                                                         Button control
+   reading = digitalRead(inPin);
+
+  // if the input just went from LOW and HIGH and we've waited long enough
+  // to ignore any noise on the circuit, toggle the output pin and remember
+  // the time
+  if (reading == HIGH && previous == LOW && millis() - time > debounce)
+  {
+    if (state == HIGH)
+      state = LOW;
+    else
+      state = HIGH;
+
+    time = millis();
+  }
+
+  digitalWrite(outPin, state);
+  previous = reading;
+}
+
+   
+   
+   
     currentTime = millis();
 
     led.update();    // update LED color
